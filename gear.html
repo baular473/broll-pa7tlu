@@ -171,7 +171,7 @@ function init(){
   });
 
   // 드롭존
-  setupDrop("d-eq","f-eq"); setupDrop("d-insc","f-insc");
+  setupDrop("d-eq","f-eq","eq"); setupDrop("d-insc","f-insc","insc");
   document.getElementById("submit").onclick=submit;
   document.getElementById("q").oninput=renderGallery;
   document.getElementById("fbuild").onchange=renderGallery;
@@ -189,22 +189,29 @@ function init(){
   loadGallery();
 }
 
-function setupDrop(dropId,inputId){
+let FILES={eq:null,insc:null};
+function setupDrop(dropId,inputId,slot){
   const drop=document.getElementById(dropId), input=document.getElementById(inputId);
   drop.onclick=()=>input.click();
-  input.onchange=()=>preview(drop,input.files[0]);
+  input.onchange=()=>pick(slot,drop,input.files[0]);
   drop.ondragover=e=>{e.preventDefault();drop.classList.add('has');};
-  drop.ondragleave=()=>drop.classList.remove('has');
+  drop.ondragleave=()=>{if(!FILES[slot])drop.classList.remove('has');};
   drop.ondrop=e=>{e.preventDefault();const f=e.dataTransfer.files[0];
-    if(f){input.files=e.dataTransfer.files;preview(drop,f);}};
+    if(f){try{input.files=e.dataTransfer.files;}catch(_){ } pick(slot,drop,f);}};
 }
-function preview(drop,file){
+function pick(slot,drop,file){
   if(!file)return;
+  FILES[slot]=file;
   drop.classList.add('has');
-  const url=URL.createObjectURL(file);
-  drop.innerHTML=`선택됨: ${file.name}<br><img src="${url}">`;
-  // input이 innerHTML 교체로 사라지므로 다시 붙임
-  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.hidden=true;
+  let pv=drop.querySelector('.pv');
+  if(!pv){pv=document.createElement('div');pv.className='pv';drop.appendChild(pv);}
+  pv.innerHTML=`선택됨: ${file.name}<br><img src="${URL.createObjectURL(file)}">`;
+}
+function resetDrop(dropId,slot){
+  FILES[slot]=null;
+  const drop=document.getElementById(dropId);
+  drop.classList.remove('has');
+  const pv=drop.querySelector('.pv'); if(pv)pv.remove();
 }
 
 async function submit(){
@@ -212,8 +219,8 @@ async function submit(){
   const nick=document.getElementById("f-nick").value.trim();
   const build=document.getElementById("f-build").value;
   const cmd=document.getElementById("f-cmd").value.trim();
-  const eq=document.getElementById("f-eq").files[0];
-  const insc=document.getElementById("f-insc").files[0];
+  const eq=FILES.eq;
+  const insc=FILES.insc;
   if(!nick){return say(msg,"닉네임을 입력하세요","err");}
   if(!eq||!insc){return say(msg,"사진 2장(장비·비문)을 모두 올려주세요","err");}
   if(!sb){return say(msg,"Supabase 미설정","err");}
@@ -234,9 +241,7 @@ async function submit(){
     say(msg,"✅ 등록 완료! '모음' 탭에서 확인하세요.","ok");
     document.getElementById("f-nick").value="";document.getElementById("f-cmd").value="";
     document.getElementById("f-eq").value="";document.getElementById("f-insc").value="";
-    document.getElementById("d-eq").classList.remove("has");document.getElementById("d-eq").textContent="장비 그리드 사진 선택/드래그";
-    document.getElementById("d-insc").classList.remove("has");document.getElementById("d-insc").textContent="비문·특성 사진 선택/드래그";
-    setupDrop("d-eq","f-eq");setupDrop("d-insc","f-insc");
+    resetDrop("d-eq","eq");resetDrop("d-insc","insc");
     DATA=null;
   }catch(e){say(msg,"오류: "+(e.message||e),"err");}
   btn.disabled=false;
