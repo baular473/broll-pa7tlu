@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>강철손 브롤 추적 관리</title>
+<style>
+  :root{--bg:#0f1420;--card:#171e2e;--line:#283347;--txt:#e6ebf5;--mut:#8b97ad;
+        --accent:#4f8cff;--green:#2ec27e;--red:#ff5d6c;--amber:#ffb020;--head:#1f2a40;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 "Segoe UI",system-ui,sans-serif;}
+  header{padding:18px 24px;background:linear-gradient(90deg,#17233c,#141a28);border-bottom:1px solid var(--line);
+         position:sticky;top:0;z-index:20;}
+  h1{margin:0;font-size:20px;letter-spacing:.3px;}
+  .sub{color:var(--mut);font-size:12px;margin-top:4px;}
+  .wrap{padding:18px 24px;max-width:1500px;margin:0 auto;}
+  .tabs{display:flex;gap:8px;margin:14px 0;}
+  .tab{padding:8px 16px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--card);color:var(--mut);}
+  .tab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+  .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+  input,select{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:13px;}
+  input::placeholder{color:var(--mut);}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;color:var(--mut);font-size:12px;}
+  .chip b{color:var(--txt);}
+  table{border-collapse:collapse;width:100%;background:var(--card);border-radius:12px;overflow:hidden;}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;}
+  th{background:var(--head);position:sticky;top:0;cursor:pointer;user-select:none;font-size:12px;color:#c7d2e6;}
+  th:hover{color:#fff;}
+  td.name,th.name{text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis;}
+  tr:hover td{background:#1d2740;}
+  .rank{color:var(--mut);}
+  .pill{display:inline-block;min-width:22px;padding:1px 6px;border-radius:6px;font-weight:600;font-size:12px;}
+  .gridtbl td{padding:2px 0;font-size:11px;width:20px;}
+  .cell-F{background:#13241c;color:#2ec27e;}
+  .cell-G{background:#3a1620;color:#ff7784;font-weight:700;}
+  .cell-O{background:#2a2410;color:#ffb020;}
+  .cell-x{background:#20283a;color:#3a4257;}
+  .miss{color:var(--red);font-weight:700;}
+  .ok{color:var(--green);}
+  .foot{color:var(--mut);font-size:11px;margin-top:16px;line-height:1.7;}
+  code{background:#0b1120;padding:2px 6px;border-radius:5px;color:#9fd0ff;}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--mut);margin:6px 0 12px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .credit{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:12px;}
+  .credit b{color:#9fd0ff;}
+  .by{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);text-align:center;
+      color:var(--mut);font-size:12px;}
+  .by b{color:#9fd0ff;}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ 강철손 브롤 추적 관리</h1>
+  <div class="sub" id="meta"></div>
+  <div class="sub credit">made by <b>Huni</b> · 문의/제보 환영</div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab on" data-v="agg">📊 누적 추적</div>
+    <div class="tab" data-v="sess">🗓️ 회차별 그리드</div>
+  </div>
+
+  <div id="view-agg">
+    <div class="bar">
+      <input id="q" placeholder="🔍 닉네임 검색" style="width:220px">
+      <span class="chip">총독 <b id="c-gov"></b>명</span>
+      <span class="chip">회차 <b id="c-sess"></b>개</span>
+      <span class="chip">미지급 발생 <b id="c-miss"></b>명</span>
+      <label class="chip"><input type="checkbox" id="onlyMiss" style="vertical-align:-2px"> 미지급자만</label>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:#ff5d6c"></i>미지급(초록상자만)</span>
+      <span><i class="sw" style="background:#2ec27e"></i>정상수령</span>
+      <span>열 머리글 클릭 = 정렬</span>
+    </div>
+    <div style="overflow:auto;max-height:72vh;">
+      <table id="t-agg"></table>
+    </div>
+  </div>
+
+  <div id="view-sess" style="display:none">
+    <div class="bar">
+      <select id="selSess"></select>
+      <input id="q2" placeholder="🔍 닉네임" style="width:180px">
+      <span class="chip" id="s-info"></span>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:#2ec27e"></i>F 정상</span>
+      <span><i class="sw" style="background:#ff5d6c"></i>G 미지급</span>
+      <span><i class="sw" style="background:#ffb020"></i>O 기타</span>
+      <span><i class="sw" style="background:#20283a"></i>- 결석</span>
+    </div>
+    <div style="overflow:auto;max-height:72vh;">
+      <table id="t-sess" class="gridtbl"></table>
+    </div>
+  </div>
+
+  <div class="foot">
+    새 회차 추가: 브롤 종료 후 <code>python brawl/build_tracker_data.py</code> 실행 → 이 페이지 새로고침(F5).<br>
+    데이터는 게임 메일 캐시에서 자동 집계됩니다. 미지급 = 보상으로 초록상자(SubType 7006)만 받고 보상젬(26) 미수령.
+  </div>
+  <div class="by">⚔️ 강철손 브롤 추적 관리 · made by <b>Huni</b> · 문의/제보 환영</div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.BROLL_DATA;
+const S = D.sessions, G = D.governors;
+document.getElementById('meta').textContent =
+  `생성 ${D.generated} · 세션 ${S.length}개 · 총독 ${G.length}명`;
+document.getElementById('c-gov').textContent = G.length;
+document.getElementById('c-sess').textContent = S.length;
+document.getElementById('c-miss').textContent = G.filter(g=>g.totalGreen>0).length;
+
+// 탭
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('view-agg').style.display = t.dataset.v==='agg'?'':'none';
+  document.getElementById('view-sess').style.display = t.dataset.v==='sess'?'':'none';
+});
+
+/* ---------- 누적 테이블 ---------- */
+let sortKey='totalGreen', sortDir=-1;
+function redIntensity(n,max){ if(!n)return ''; const a=0.15+0.55*Math.min(1,n/Math.max(1,max));
+  return `background:rgba(255,93,108,${a.toFixed(2)});color:#fff;`;}
+function missRate(g){const r=g.totalAttend?Math.round(100*g.totalGreen/g.totalAttend):0;return r;}
+function renderAgg(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const onlyMiss=document.getElementById('onlyMiss').checked;
+  const maxG=Math.max(...G.map(g=>g.totalGreen),1);
+  let rows=G.filter(g=>(!q||g.name.toLowerCase().includes(q)||g.names.some(n=>n.toLowerCase().includes(q)))
+                     &&(!onlyMiss||g.totalGreen>0));
+  const key=sortKey;
+  rows.sort((a,b)=>{
+    let va,vb;
+    if(key.startsWith('s')){const sid=+key.slice(1);va=(a.per[sid]||{}).green||0;vb=(b.per[sid]||{}).green||0;}
+    else if(key==='rate'){va=missRate(a);vb=missRate(b);}
+    else if(key==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase();}
+    else {va=a[key];vb=b[key];}
+    return (va<vb?-1:va>vb?1:0)*sortDir;
+  });
+  const sh=S.map(s=>`<th data-k="s${s.id}" title="${s.label}">S${s.id}</th>`).join('');
+  let html=`<thead><tr><th class="rank">#</th><th class="name" data-k="name">닉네임</th>
+    <th data-k="sessions">참여<br>회차</th><th data-k="totalAttend">총턴</th>
+    <th data-k="totalGreen">총<br>미지급</th><th data-k="rate">미지급<br>율</th>${sh}</tr></thead><tbody>`;
+  rows.forEach((g,i)=>{
+    const cells=S.map(s=>{const p=g.per[s.id];
+      if(!p)return `<td style="color:#3a4257">·</td>`;
+      const st=p.green>0?`<span class="pill" style="${redIntensity(p.green,maxG)}">${p.green}</span>`
+                        :`<span class="ok">✓</span>`;
+      return `<td title="S${s.id} 출석${p.attend}/정상${p.full}/미지급${p.green}">${st}</td>`;}).join('');
+    html+=`<tr><td class="rank">${i+1}</td><td class="name" title="${g.names.join(' / ')}">${esc(g.name)}</td>
+      <td>${g.sessions}</td><td>${g.totalAttend}</td>
+      <td class="${g.totalGreen?'miss':''}">${g.totalGreen}</td>
+      <td class="${missRate(g)>30?'miss':''}">${missRate(g)}%</td>${cells}</tr>`;
+  });
+  html+='</tbody>';
+  const t=document.getElementById('t-agg');t.innerHTML=html;
+  t.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='name')?1:-1;}
+    renderAgg();
+  });
+}
+document.getElementById('q').oninput=renderAgg;
+document.getElementById('onlyMiss').onchange=renderAgg;
+
+/* ---------- 회차별 그리드 ---------- */
+const sel=document.getElementById('selSess');
+S.slice().reverse().forEach(s=>{const o=document.createElement('option');o.value=s.id;
+  o.textContent=`세션 ${s.id} · ${s.date} ${s.start}~${s.end} (${s.turns}턴)`;sel.appendChild(o);});
+function renderSess(){
+  const sid=+sel.value;const s=S.find(x=>x.id===sid);
+  const q=document.getElementById('q2').value.trim().toLowerCase();
+  let rows=G.filter(g=>g.per[sid]).map(g=>({g,p:g.per[sid]}))
+    .filter(r=>!q||r.g.name.toLowerCase().includes(q));
+  rows.sort((a,b)=>b.p.green-a.p.green||b.p.attend-a.p.attend);
+  const miss=rows.filter(r=>r.p.green>0).length;
+  document.getElementById('s-info').innerHTML=`<b>${rows.length}</b>명 참여 · 미지급 <b style="color:#ff5d6c">${miss}</b>명 · ${s.turns}턴`;
+  const th=s.times.map((tm,i)=>`<th title="${tm}">${i+1}</th>`).join('');
+  let html=`<thead><tr><th class="rank">#</th><th class="name">닉네임</th><th>미지급</th>${th}</tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    const cells=[...r.p.grid].map(c=>{
+      const map={F:['cell-F','●'],G:['cell-G','X'],O:['cell-O','△'],'-':['cell-x','·']};
+      const [cls,ch]=map[c]||['cell-x','·'];return `<td class="${cls}">${ch}</td>`;}).join('');
+    html+=`<tr><td class="rank">${i+1}</td><td class="name" title="${r.g.names.join(' / ')}">${esc(r.g.name)}</td>
+      <td class="${r.p.green?'miss':''}">${r.p.green}</td>${cells}</tr>`;
+  });
+  html+='</tbody>';document.getElementById('t-sess').innerHTML=html;
+}
+sel.onchange=renderSess;document.getElementById('q2').oninput=renderSess;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+renderAgg();renderSess();
+</script>
+</body>
+</html>
