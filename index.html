@@ -48,9 +48,29 @@
   .by{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);text-align:center;
       color:var(--mut);font-size:12px;}
   .by b{color:#9fd0ff;}
+  #gate{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;
+        align-items:center;justify-content:center;}
+  .gatebox{background:var(--card);border:1px solid var(--line);border-radius:14px;
+           padding:28px 26px;width:min(360px,90vw);text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .gatebox h2{margin:0 0 6px;font-size:18px;}
+  .gatebox p{color:var(--mut);font-size:12px;margin:0 0 16px;}
+  .gatebox input{width:100%;text-align:center;letter-spacing:2px;margin-bottom:10px;padding:11px;}
+  .gatebox button{width:100%;padding:11px;border:0;border-radius:8px;background:var(--accent);
+                  color:#fff;font-weight:600;cursor:pointer;font-size:14px;}
+  .gateerr{color:var(--red);font-size:12px;height:16px;margin-top:8px;}
+  body.locked{overflow:hidden;}
 </style>
 </head>
-<body>
+<body class="locked">
+<div id="gate">
+  <div class="gatebox">
+    <h2>🔒 강철손 브롤 추적</h2>
+    <p>비밀번호를 입력하세요</p>
+    <input id="gpw" type="password" placeholder="비밀번호" autocomplete="off">
+    <button id="gbtn">입장</button>
+    <div class="gateerr" id="gerr"></div>
+  </div>
+</div>
 <header>
   <h1>⚔️ 강철손 브롤 추적 관리</h1>
   <div class="sub" id="meta"></div>
@@ -104,6 +124,27 @@
   <div class="by">⚔️ 강철손 브롤 추적 관리 · made by <b>Huni</b> · 문의/제보 환영</div>
 </div>
 
+<script>
+/* ---------- 비밀번호 게이트 ---------- */
+(function(){
+  const HASH="953510b1f35f67f9b52d3269027222aa5c22f5c2aa363ac771ad25daa920c054";
+  const KEY="broll_gate_ok";
+  async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+  function open(){document.getElementById("gate").style.display="none";
+    document.body.classList.remove("locked");}
+  if(sessionStorage.getItem(KEY)==="1"||localStorage.getItem(KEY)==="1"){open();return;}
+  const inp=document.getElementById("gpw"),btn=document.getElementById("gbtn"),err=document.getElementById("gerr");
+  async function tryIn(){
+    const h=await sha(inp.value);
+    if(h===HASH){sessionStorage.setItem(KEY,"1");localStorage.setItem(KEY,"1");open();}
+    else{err.textContent="비밀번호가 틀렸습니다";inp.value="";inp.focus();}
+  }
+  btn.onclick=tryIn;
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")tryIn();});
+  inp.focus();
+})();
+</script>
 <script src="data.js"></script>
 <script>
 const D = window.BROLL_DATA;
